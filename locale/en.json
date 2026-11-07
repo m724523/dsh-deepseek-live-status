@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DeepSeek Live Status",
+    "description": "A one-line widget at the sidebar footer: a status dot plus the live latency of four probes (API, chat, docs, status page) measured from this machine, with a popover that lists official component statuses read from status.deepseek.com."
+  }
+}

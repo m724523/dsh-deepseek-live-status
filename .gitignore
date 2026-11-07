@@ -1,0 +1,6 @@
+# local artifacts, never published
+.shots/
+.scratch/
+scripts/
+*.zip
+node_modules/

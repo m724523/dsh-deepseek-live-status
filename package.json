@@ -1,0 +1,63 @@
+{
+  "name": "dsh-deepseek-live-status",
+  "version": "0.1.0",
+  "description": "DSH 插件：左侧栏底部的 DeepSeek 服务状态小挂件 —— 本机实时探针与 status.deepseek.com 官方数据并排。",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./host": "./host.mjs",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./screenshots.json": "./screenshots.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.mjs",
+    "host.mjs",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE",
+    "screenshots.json",
+    "docs/*.png"
+  ],
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "status",
+    "monitor",
+    "sidebar-widget"
+  ],
+  "license": "MIT",
+  "author": "dsh-deepseek-live-status contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m724523/dsh-deepseek-live-status.git"
+  },
+  "homepage": "https://github.com/m724523/dsh-deepseek-live-status#readme",
+  "bugs": {
+    "url": "https://github.com/m724523/dsh-deepseek-live-status/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.1-rc.5"
+  }
+}

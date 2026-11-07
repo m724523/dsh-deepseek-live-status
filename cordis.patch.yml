@@ -1,0 +1,9 @@
+# Host half owns the probes and the two HTTP routes; the browser half owns the
+# sidebar entry and the panel. They are separate rows so the panel can be turned
+# off without losing the local monitoring endpoint.
+- insert:
+    - id: dsh-deepseek-live-status-host
+      name: dsh-deepseek-live-status/host
+      config: {}
+    - id: dsh-deepseek-live-status-ui
+      name: dsh-deepseek-live-status
