@@ -1,6 +1,8 @@
-## 新增插件
+## 新增插件 / New plugin
 
 `dsh-deepseek-live-status` — 左侧栏底部的一行 DeepSeek 服务状态挂件。
+
+One-line DeepSeek service widget at the sidebar footer: a status dot plus the live latency of four probes measured from this machine, with a popover showing official component statuses read from status.deepseek.com. Chinese by default, English when the host locale is `en`. No data is reported anywhere; probes only go out to those four public domains.
 
 - 挂件：状态圆点 + 名称 + 四项探针（`api.deepseek.com`、`chat.deepseek.com`、`api-docs.deepseek.com`、`status.deepseek.com`）的本机实时延迟均值
 - 点开弹出 288px 卡片：每项探针一行（状态点 / 名称 / 延迟），下面是官方公布的整体状态、组件数量与最近采样时间，以及官方状态页链接

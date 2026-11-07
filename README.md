@@ -1,5 +1,7 @@
 # dsh-deepseek-live-status
 
+**中文** · [English](README.en.md)
+
 DSH 插件：左侧栏底部一个单行小挂件 —— 状态圆点 + `DeepSeek` + 最新平均延迟，点一下在它上方弹出 288px 宽的小卡片，看四项探针与官方状态。
 
 ## 它监测什么

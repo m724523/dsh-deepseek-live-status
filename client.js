@@ -21,6 +21,62 @@ window.__ModuleLoader__.load({
       unknown: '#929ba9',
     }
 
+    // Chinese defaults, used when the host has no locale service (or before the
+    // dictionary is registered). English comes from the locale registration below.
+    const TEXT = {
+      'entry.label': 'DeepSeek 状态',
+      'widget.title': 'DeepSeek 服务状态',
+      'level.operational': '正常',
+      'level.maintenance': '维护',
+      'level.degraded': '降级',
+      'level.outage': '中断',
+      'level.unknown': '未知',
+      'card.detecting': '检测中',
+      'card.refresh': '刷新',
+      'card.sampling': '采样中',
+      'card.firstProbe': '首轮采样进行中…',
+      'card.autoRefresh': '自动刷新',
+      'card.busy': '刷新中',
+      'card.saved': '已保存',
+      'card.official': '官方',
+      'card.componentCount': '个组件',
+      'card.unreachable': '页面不可达',
+      'card.openPage': '打开官方状态页',
+      'card.error': '监测服务：',
+      'interval.seconds': '{n} 秒',
+      'interval.minutes': '{n} 分钟',
+    }
+    const TEXT_EN = {
+      'entry.label': 'DeepSeek status',
+      'widget.title': 'DeepSeek service status',
+      'level.operational': 'Operational',
+      'level.maintenance': 'Maintenance',
+      'level.degraded': 'Degraded',
+      'level.outage': 'Outage',
+      'level.unknown': 'Unknown',
+      'card.detecting': 'checking',
+      'card.refresh': 'Refresh',
+      'card.sampling': 'Sampling',
+      'card.firstProbe': 'First probe round in progress…',
+      'card.autoRefresh': 'Auto refresh',
+      'card.busy': 'Refreshing',
+      'card.saved': 'Saved',
+      'card.official': 'Official',
+      'card.componentCount': 'components',
+      'card.unreachable': 'page unreachable',
+      'card.openPage': 'Open the official status page',
+      'card.error': 'Monitor: ',
+      'interval.seconds': '{n}s',
+      'interval.minutes': '{n} min',
+    }
+
+    // Chinese is the default; English is applied when the host runs in `en`.
+    let currentText = null
+
+    function translate(key) {
+      const dict = currentText || TEXT
+      return dict[key] || TEXT[key] || key
+    }
     const css = `
       .dsx-foot-wrap { width: 100%; }
       .dsx-foot {
@@ -170,16 +226,17 @@ window.__ModuleLoader__.load({
     }
 
     function levelText(level) {
-      return LEVEL_TEXT[level] || LEVEL_TEXT.unknown
+      return translate('level.' + (LEVEL_TEXT[level] ? level : 'unknown'))
+    }
+
+    function intervalLabel(seconds) {
+      const value = seconds < 60 ? seconds : Math.round(seconds / 60)
+      const key = seconds < 60 ? 'interval.seconds' : 'interval.minutes'
+      return translate(key).replace('{n}', String(value))
     }
 
     function levelColor(level) {
       return LEVEL_COLOR[level] || LEVEL_COLOR.unknown
-    }
-
-    function intervalLabel(seconds) {
-      if (seconds < 60) return seconds + ' 秒'
-      return Math.round(seconds / 60) + ' 分钟'
     }
 
     function useStore() {
@@ -221,7 +278,7 @@ window.__ModuleLoader__.load({
           type: 'button',
           ref: button,
           className: 'dsx-foot' + (wide ? '' : ' rail'),
-          title: 'DeepSeek 服务状态',
+          title: translate('widget.title'),
           'aria-expanded': state.open ? 'true' : 'false',
           onClick: toggle,
         },
@@ -276,41 +333,41 @@ window.__ModuleLoader__.load({
         ? INTERVAL_OPTIONS
         : INTERVAL_OPTIONS.concat([currentSeconds]).sort((left, right) => left - right)
 
-      return h('div', { className: 'dsx-pop', style, role: 'dialog', 'aria-label': 'DeepSeek 服务状态' },
+      return h('div', { className: 'dsx-pop', style, role: 'dialog', 'aria-label': translate('widget.title') },
         h('style', null, css),
         h('div', { className: 'dsx-pop-head' },
-          h('span', { className: 'dsx-pop-title' }, 'DeepSeek · ' + (snapshot ? levelText(overall) : '检测中')),
+          h('span', { className: 'dsx-pop-title' }, 'DeepSeek · ' + (snapshot ? levelText(overall) : translate('card.detecting'))),
           h('button', {
             type: 'button', className: 'dsx-pop-btn', disabled: busy,
             onClick: () => { void loadSnapshot(true) },
-          }, busy ? '采样中' : '刷新')),
+          }, busy ? translate('card.sampling') : translate('card.refresh'))),
         targets.length
           ? targets.map(target => h('div', { className: 'dsx-row', key: target.id },
             h('i', { className: 'dsx-dot', style: { background: levelColor(target.level), width: 7, height: 7 } }),
             h('span', { className: 'dsx-row-name', title: target.detail }, target.label),
             h('span', { className: 'dsx-row-value' }, target.latencyMs == null ? (target.error || '—') : formatMs(target.latencyMs))))
-          : h('div', { className: 'dsx-note' }, '首轮采样进行中…'),
+          : h('div', { className: 'dsx-note' }, translate('card.firstProbe')),
         h('div', { className: 'dsx-sep' }),
         h('div', { className: 'dsx-interval' },
-          h('span', { className: 'dsx-interval-label' }, '自动刷新'),
+          h('span', { className: 'dsx-interval-label' }, translate('card.autoRefresh')),
           h('select', {
             className: 'dsx-select',
             value: currentSeconds,
-            'aria-label': '自动刷新间隔',
+            'aria-label': translate('card.autoRefresh'),
             onChange: event => { setRefreshSeconds(Number(event.target.value)) },
           }, intervalOptions.map(seconds => h('option', { key: seconds, value: seconds }, intervalLabel(seconds)))),
-          h('span', { className: 'dsx-interval-label' }, busy ? '刷新中' : '已保存')),
+          h('span', { className: 'dsx-interval-label' }, busy ? translate('card.busy') : translate('card.saved'))),
         h('div', { className: 'dsx-note' },
-          '官方：' + (official ? levelText(official.level) : '—')
-          + (official && official.components && official.components.length ? ' · ' + official.components.length + ' 个组件' : '')
-          + (official && !official.reachable ? ' · 页面不可达' : '')
+          translate('card.official') + '：' + (official ? levelText(official.level) : '—')
+          + (official && official.components && official.components.length ? ' · ' + official.components.length + ' ' + translate('card.componentCount') : '')
+          + (official && !official.reachable ? ' · ' + translate('card.unreachable') : '')
           + ' · ' + formatTime(snapshot ? snapshot.lastCycleAt : null),
           h('br'),
           h('a', {
             href: (official && official.url) || 'https://status.deepseek.com/',
             target: '_blank', rel: 'noreferrer',
-          }, '打开官方状态页')),
-        error ? h('div', { className: 'dsx-err' }, '监测服务：' + error) : null)
+          }, translate('card.openPage'))),
+        error ? h('div', { className: 'dsx-err' }, translate('card.error') + error) : null)
     }
 
     function apply(ctx) {
@@ -319,15 +376,30 @@ window.__ModuleLoader__.load({
       if (!slots) return
 
       const locale = ctx.get ? ctx.get('locale') : null
-      let label = () => 'DeepSeek'
       if (locale && typeof locale.register === 'function') {
-        ctx.effect(() => locale.register(NS, {
-          zh: { 'entry.label': 'DeepSeek 状态' },
-          en: { 'entry.label': 'DeepSeek status' },
-        }), 'dsh-deepseek-live-status: locale')
-        const translate = locale.bind(NS)
-        label = () => translate('entry.label')
+        ctx.effect(() => locale.register(NS, { zh: TEXT, en: TEXT_EN }), 'dsh-deepseek-live-status: locale')
       }
+
+      // Chinese is the default; English only when the host itself is in `en`.
+      const pickLanguage = () => {
+        let id = 'zh'
+        try {
+          const snapshot = locale && typeof locale.getSnapshot === 'function'
+            ? locale.getSnapshot()
+            : locale && typeof locale.getLocale === 'function' ? locale.getLocale() : null
+          id = String((snapshot && (snapshot.locale || snapshot.activeLocale || snapshot.language)) || 'zh')
+        } catch { id = 'zh' }
+        currentText = id.toLowerCase().indexOf('en') === 0 ? TEXT_EN : null
+      }
+      pickLanguage()
+      if (locale && typeof locale.subscribe === 'function') {
+        ctx.effect(() => locale.subscribe(() => {
+          pickLanguage()
+          store.set({})
+        }), 'dsh-deepseek-live-status: language')
+      }
+
+      const label = () => translate('entry.label')
 
       ctx.effect(() => slots.inject('sidebar.footer.action', () => slots.register({
         name: 'sidebar.footer.action', id: 'dsh-deepseek-live-status', order: 6,
