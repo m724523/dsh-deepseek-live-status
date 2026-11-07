@@ -22,11 +22,12 @@ Restart `dsh web` afterwards. `#<commit>` pins a version; a local path works too
 
 15s / 30s (default) / 1 min / 2 min in the card, stored in `localStorage`. Each tick forces a probe round, so the numbers are live. 15s is the floor.
 
+The Host runs no background timer: with no page polling it sends nothing and just keeps the last result.
+
 ## Configuration
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `DSH_DEEPSEEK_STATUS_INTERVAL_MS` | `60000` | Background cadence (15s–900s) |
 | `DSH_DEEPSEEK_STATUS_TIMEOUT_MS` | `9000` | Per-request timeout (1.5s–30s) |
 | `DSH_DEEPSEEK_STATUS_URL` | `https://status.deepseek.com/` | Status page to read (mirrors work) |
 

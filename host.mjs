@@ -13,12 +13,11 @@
  * Routes (exact paths):
  *   GET  /api/dsh-deepseek-live-status/snapshot  -> latest cached snapshot
  *   POST /api/dsh-deepseek-live-status/refresh   -> run one probe cycle, then snapshot
- *   POST /api/dsh-deepseek-live-status/config    -> change the probe cadence (persisted)
+ *
+ * Rounds run only on request: there is no background timer, so an idle host
+ * sends nothing on its own.
  */
 import dns from 'node:dns/promises'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 
 export const name = 'dsh-deepseek-live-status-host'
@@ -28,41 +27,14 @@ const ROOT = '/api/dsh-deepseek-live-status'
 const BODY_CAP = 512 * 1024
 const SAMPLE_CAP = 120
 const PAYLOAD_SAMPLES = 48
-const MIN_INTERVAL_MS = 15_000
-const MAX_INTERVAL_MS = 900_000
 
 function clamp(value, min, max) {
   if (!Number.isFinite(value)) return min
   return Math.min(max, Math.max(min, value))
 }
 
-const INTERVAL_MS = clamp(Number(process.env.DSH_DEEPSEEK_STATUS_INTERVAL_MS) || 60_000, MIN_INTERVAL_MS, MAX_INTERVAL_MS)
 const TIMEOUT_MS = clamp(Number(process.env.DSH_DEEPSEEK_STATUS_TIMEOUT_MS) || 9_000, 1_500, 30_000)
 const OFFICIAL_URL = process.env.DSH_DEEPSEEK_STATUS_URL || 'https://status.deepseek.com/'
-
-// The chosen cadence survives a Host restart without touching the profile patch.
-const STATE_DIR = process.env.DSH_HOME || path.join(os.homedir(), '.dsh')
-const STATE_FILE = path.join(STATE_DIR, 'deepseek-status.json')
-
-function readSavedInterval() {
-  try {
-    const saved = JSON.parse(readFileSync(STATE_FILE, 'utf8'))
-    const value = Number(saved?.intervalMs)
-    return Number.isFinite(value) ? clamp(value, MIN_INTERVAL_MS, MAX_INTERVAL_MS) : null
-  } catch {
-    return null
-  }
-}
-
-function saveInterval(intervalMs) {
-  try {
-    mkdirSync(STATE_DIR, { recursive: true })
-    writeFileSync(STATE_FILE, JSON.stringify({ intervalMs }, null, 2) + '\n')
-    return true
-  } catch {
-    return false
-  }
-}
 
 const TARGETS = [
   {
@@ -369,7 +341,7 @@ function summarize(target, latest, samples) {
   }
 }
 
-function createMonitor({ intervalMs = INTERVAL_MS, timeoutMs = TIMEOUT_MS } = {}) {
+function createMonitor({ timeoutMs = TIMEOUT_MS } = {}) {
   const startedAt = nowIso()
   const latest = new Map(TARGETS.map(target => [target.id, null]))
   const samples = new Map(TARGETS.map(target => [target.id, []]))
@@ -384,7 +356,6 @@ function createMonitor({ intervalMs = INTERVAL_MS, timeoutMs = TIMEOUT_MS } = {}
   }
   let lastCycleAt = null
   let cyclePromise = null
-  let timer = null
 
   async function cycle() {
     await Promise.all(TARGETS.map(async target => {
@@ -412,35 +383,12 @@ function createMonitor({ intervalMs = INTERVAL_MS, timeoutMs = TIMEOUT_MS } = {}
     return cyclePromise
   }
 
-  function start() {
-    void refresh()
-    arm()
-    return () => {
-      if (timer) clearInterval(timer)
-      timer = null
-    }
-  }
-
-  function arm() {
-    if (timer) clearInterval(timer)
-    timer = setInterval(() => { void refresh() }, intervalMs)
-    timer?.unref?.()
-  }
-
-  function setIntervalMs(next) {
-    intervalMs = clamp(Number(next), MIN_INTERVAL_MS, MAX_INTERVAL_MS)
-    if (timer) arm()
-    saveInterval(intervalMs)
-    return intervalMs
-  }
-
   function snapshot() {
     const targets = TARGETS.map(target => summarize(target, latest.get(target.id), samples.get(target.id)))
     return {
       generatedAt: nowIso(),
       startedAt,
       lastCycleAt,
-      intervalMs,
       timeoutMs,
       probing: Boolean(cyclePromise),
       overall: worstLevel(targets.map(target => target.level)),
@@ -449,7 +397,7 @@ function createMonitor({ intervalMs = INTERVAL_MS, timeoutMs = TIMEOUT_MS } = {}
     }
   }
 
-  return { start, refresh, snapshot, setIntervalMs }
+  return { refresh, snapshot }
 }
 
 async function readJsonBody(req) {
@@ -510,14 +458,6 @@ function makeRoutes(monitor, fence) {
         return monitor.snapshot()
       }),
     },
-    {
-      kind: 'exact',
-      path: ROOT + '/config',
-      handler: guard(async (body) => {
-        monitor.setIntervalMs(body.intervalMs)
-        return monitor.snapshot()
-      }),
-    },
   ]
 }
 
@@ -526,14 +466,17 @@ function isDuplicateRoute(error) {
 }
 
 export function apply(ctx) {
-  const monitor = createMonitor({ intervalMs: readSavedInterval() ?? INTERVAL_MS })
+  // No background timer: rounds only run when the page asks for one, so an idle
+  // host never sends traffic on its own. One warm-up round keeps the first
+  // snapshot from being empty.
+  const monitor = createMonitor()
   const fence = (req) => {
     const connection = ctx.get?.('connection')
     if (!connection || typeof connection.requestRejection !== 'function') return undefined
     return connection.requestRejection(req)
   }
   ctx.effect(() => {
-    const stopTimer = monitor.start()
+    void monitor.refresh()
     const disposers = []
     try {
       for (const route of makeRoutes(monitor, fence)) {
@@ -546,12 +489,10 @@ export function apply(ctx) {
       }
     } catch (error) {
       for (const dispose of disposers) dispose()
-      stopTimer()
       throw error
     }
     return () => {
-      stopTimer()
       for (const dispose of disposers) dispose()
     }
-  }, 'dsh-deepseek-live-status: monitor and routes')
+  }, 'dsh-deepseek-live-status: routes')
 }

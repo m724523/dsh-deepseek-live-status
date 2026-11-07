@@ -22,11 +22,12 @@ dsh plugin --profile web add github:m724523/dsh-deepseek-live-status
 
 卡片里可选 15 秒 / 30 秒（默认）/ 1 分钟 / 2 分钟，存在 `localStorage`，重开页面保留。到点会强制跑一轮探针，所以数据是即时的。15 秒是下限。
 
+Host 不跑后台定时器：没有页面在刷的时候它不发任何请求，只保留最近一次结果。
+
 ## 配置
 
 | 环境变量 | 默认 | 说明 |
 | --- | --- | --- |
-| `DSH_DEEPSEEK_STATUS_INTERVAL_MS` | `60000` | 后台采样间隔（15s–900s） |
 | `DSH_DEEPSEEK_STATUS_TIMEOUT_MS` | `9000` | 单次请求超时（1.5s–30s） |
 | `DSH_DEEPSEEK_STATUS_URL` | `https://status.deepseek.com/` | 官方页地址，可换镜像 |
 

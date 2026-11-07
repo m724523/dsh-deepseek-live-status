@@ -8,7 +8,7 @@ One-line DeepSeek service widget at the sidebar footer: a status dot plus the li
 - 点开弹出 288px 卡片：每项探针一行（状态点 / 名称 / 延迟），下面是官方公布的整体状态、组件数量与最近采样时间，以及官方状态页链接
 - 官方数据读自 `status.deepseek.com` 页面内嵌载荷（该站没有公开 JSON API）：解析 `components` / `component_impacts` / `changes`，按「是否存在覆盖当前时刻的 impact」判定组件状态；解析不到就标未知，不会默认显示正常
 - 自动刷新 15 秒 / 30 秒（默认）/ 1 分钟 / 2 分钟，选择存 `localStorage`
-- Host 侧注册三条本机同源路由（`snapshot` / `refresh` / `config`），走 `connection.requestRejection()` 做来源校验，不新开端口；零运行时依赖、无构建脚本
+- Host 侧只注册两条本机同源路由（`snapshot` / `refresh`），走 `connection.requestRejection()` 做来源校验，不新开端口；没有后台定时器，没人刷新时不发任何请求；零运行时依赖、无构建脚本
 - 不上报任何数据：探针只从本机发往上述四个公共域名
 
 安装：

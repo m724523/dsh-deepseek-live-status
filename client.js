@@ -206,11 +206,7 @@ window.__ModuleLoader__.load({
       const next = Math.max(MIN_REFRESH_SECONDS, Math.round(Number(seconds) || DEFAULT_REFRESH_SECONDS))
       store.set({ refreshSeconds: next })
       try { window.localStorage.setItem(STORAGE_KEY, String(next)) } catch { /* storage unavailable */ }
-      // Best effort: keep the Host's own background cadence in step where the
-      // route exists; a Host that predates it answers 404 and that is harmless.
-      call('/config', { method: 'POST', body: { intervalMs: next * 1000 } })
-        .then(data => { if (data && data.intervalMs) store.set({ snapshot: data, error: '' }) })
-        .catch(() => {})
+      void loadSnapshot(true)
     }
 
     function formatMs(value) {
@@ -252,7 +248,7 @@ window.__ModuleLoader__.load({
       const button = useRef(null)
 
       useEffect(() => {
-        void loadSnapshot(false)
+        void loadSnapshot(true)
         const timer = setInterval(() => { void loadSnapshot(true) }, state.refreshSeconds * 1000)
         return () => clearInterval(timer)
       }, [state.refreshSeconds])
@@ -300,7 +296,7 @@ window.__ModuleLoader__.load({
 
       useEffect(() => {
         if (!open) return undefined
-        void loadSnapshot(false)
+        void loadSnapshot(true)
         const timer = setInterval(() => { void loadSnapshot(true) }, state.refreshSeconds * 1000)
         return () => clearInterval(timer)
       }, [open, state.refreshSeconds])
