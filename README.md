@@ -40,13 +40,27 @@ DSH 插件：左侧栏底部一个单行小挂件 —— 状态圆点 + `DeepSee
 
 ## 安装
 
-```sh
-# 从 npm（发布后）
-dsh plugin --profile web add dsh-deepseek-live-status
+直接从 GitHub 装（不需要 npm，也不需要等收录）：
 
-# 从本地目录
+```sh
+dsh plugin --profile web add github:m724523/dsh-deepseek-live-status
+
+# 锁到某个提交
+dsh plugin --profile web add github:m724523/dsh-deepseek-live-status#249af92
+
+# 或用完整地址
+dsh plugin --profile web add https://github.com/m724523/dsh-deepseek-live-status
+```
+
+装完重启 `dsh web`（新的客户端模块要重新扫描才会进浏览器清单），侧栏底部就会出现那一行挂件。
+
+从本地目录装（开发时）：
+
+```sh
 dsh plugin --profile web add ./dsh-deepseek-live-status
 ```
+
+要求 DSH `>= 0.2.1-rc.5`（见 `package.json` 的 `engines.dsh`）。零运行时依赖、没有 `prepare`/`build` 脚本，所以不会触发构建脚本授权。
 
 ## 可调项
 
