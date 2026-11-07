@@ -529,7 +529,8 @@ export function apply(ctx) {
   const monitor = createMonitor({ intervalMs: readSavedInterval() ?? INTERVAL_MS })
   const fence = (req) => {
     const connection = ctx.get?.('connection')
-    return connection ? connection.requestRejection(req) : undefined
+    if (!connection || typeof connection.requestRejection !== 'function') return undefined
+    return connection.requestRejection(req)
   }
   ctx.effect(() => {
     const stopTimer = monitor.start()

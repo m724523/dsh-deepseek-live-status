@@ -107,6 +107,10 @@ window.__ModuleLoader__.load({
 
     store.state.refreshSeconds = readRefreshSeconds()
 
+    // Set while the host declares `shell.overlay`; the footer falls back to
+    // rendering the card inline when it does not.
+    let overlaySlotActive = false
+
     async function call(path, options) {
       const method = options && options.method ? options.method : 'GET'
       const body = options && options.body !== undefined ? JSON.stringify(options.body) : undefined
@@ -223,7 +227,10 @@ window.__ModuleLoader__.load({
         },
           h('i', { className: 'dsx-dot', style: { background: levelColor(overall), width: wide ? 8 : 9, height: wide ? 8 : 9 } }),
           wide ? h('span', { className: 'dsx-foot-name' }, 'DeepSeek') : null,
-          wide ? h('span', { className: 'dsx-foot-value' }, latency == null ? '—' : formatMs(latency)) : null))
+          wide ? h('span', { className: 'dsx-foot-value' }, latency == null ? '—' : formatMs(latency)) : null),
+        // Older hosts have no `shell.overlay`; the card then renders here instead,
+        // where the sidebar clipping may cut it off — worse, but still readable.
+        overlaySlotActive ? null : h(PopoverCard))
     }
 
     function PopoverCard() {
@@ -308,20 +315,36 @@ window.__ModuleLoader__.load({
 
     function apply(ctx) {
       const NS = 'dsh-deepseek-live-status'
-      ctx.effect(() => ctx.locale.register(NS, {
-        zh: { 'entry.label': 'DeepSeek 状态' },
-        en: { 'entry.label': 'DeepSeek status' },
-      }), 'dsh-deepseek-live-status: locale')
-      const t = ctx.locale.bind(NS)
-      ctx.effect(() => ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+      const slots = ctx.get ? ctx.get('slots') : null
+      if (!slots) return
+
+      const locale = ctx.get ? ctx.get('locale') : null
+      let label = () => 'DeepSeek'
+      if (locale && typeof locale.register === 'function') {
+        ctx.effect(() => locale.register(NS, {
+          zh: { 'entry.label': 'DeepSeek 状态' },
+          en: { 'entry.label': 'DeepSeek status' },
+        }), 'dsh-deepseek-live-status: locale')
+        const translate = locale.bind(NS)
+        label = () => translate('entry.label')
+      }
+
+      ctx.effect(() => slots.inject('sidebar.footer.action', () => slots.register({
         name: 'sidebar.footer.action', id: 'dsh-deepseek-live-status', order: 6,
-        label: () => t('entry.label'), locale: NS,
+        label, locale: NS,
       }, FooterWidget)), 'dsh-deepseek-live-status: footer entry')
-      ctx.effect(() => ctx.slots.inject('shell.overlay', () => ctx.slots.register({
-        name: 'shell.overlay', id: 'dsh-deepseek-live-status-card', order: 20,
-      }, PopoverCard)), 'dsh-deepseek-live-status: status card')
+
+      // `shell.overlay` does not exist on older hosts; the footer then renders the
+      // card itself, so the plugin degrades instead of throwing.
+      ctx.effect(() => slots.inject('shell.overlay', () => {
+        overlaySlotActive = true
+        const dispose = slots.register({
+          name: 'shell.overlay', id: 'dsh-deepseek-live-status-card', order: 20,
+        }, PopoverCard)
+        return () => { overlaySlotActive = false; dispose() }
+      }), 'dsh-deepseek-live-status: status card')
     }
 
-    return { inject: ['slots', 'locale'], apply }
+    return { inject: ['slots'], apply }
   },
 })

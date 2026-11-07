@@ -125,6 +125,16 @@ description:
 合并后站点重建、`plugins.json` 每日刷新，市场里就能搜到，安装命令形如
 `dsh plugin --profile web add github:<owner>/dsh-deepseek-live-status`。
 
+## 兼容性
+
+- 声明 `engines.dsh: ">=0.1.0-rc.5"`。
+- 代码里对老版本做了降级，不会因为缺服务而抛错：
+  - 没有 `slots` 服务：插件静默不加载，Host 侧探针照常跑（`/api/dsh-deepseek-live-status/snapshot` 仍可用）。
+  - 没有 `locale` 服务：入口标题退化成固定的 `DeepSeek`。
+  - 没有 `shell.overlay`（旧版没有这个浮层）：卡片改由底部那一行自己渲染 —— 位置可能被侧栏裁掉一部分，但功能和数据都在。
+  - `connection.requestRejection` 不存在时：路由不做来源校验（与更早的插件行为一致）。
+- `sidebar.footer.action` 从 0.1.x 就有，是这行的落点；如果某个更老的版本连它都没有，插件不会显示任何东西，也不会报错。
+
 ## 已知限制
 
 - 官方页面的内嵌结构变了一次就会解析失败；此时官方卡片降级成「页面可达 + 未识别」，本机探针照常工作。
