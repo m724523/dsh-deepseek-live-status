@@ -4,6 +4,8 @@
 
 DSH 插件。左侧栏底部一行：状态圆点 + `DeepSeek` + 最新平均延迟，点开是四项探针和官方状态。
 
+![DeepSeek 状态卡片](docs/card.png)
+
 ## 它显示什么
 
 **本机探针**（默认 60 秒一轮，只从本机发出）：`api.deepseek.com`、`chat.deepseek.com`、`api-docs.deepseek.com`、`status.deepseek.com`。记录 DNS 耗时、首字节延迟、HTTP 状态，最近 120 次采样用来算可达率和延迟走势。
