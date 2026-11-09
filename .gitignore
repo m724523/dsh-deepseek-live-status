@@ -7,3 +7,4 @@ node_modules/
 
 # local publishing scratch
 market/PUBLISH-CHECKLIST.md
+*.tgz
