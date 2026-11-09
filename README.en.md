@@ -4,6 +4,8 @@
 
 A DSH plugin. One line at the sidebar footer: a status dot, `DeepSeek`, and the live average latency. Click it for four probes and the official status.
 
+![DeepSeek status card](docs/card.png)
+
 ## What it shows
 
 **Local probes** (one round per 60s, from this machine only): `api.deepseek.com`, `chat.deepseek.com`, `api-docs.deepseek.com`, `status.deepseek.com`. DNS time, time to first byte and HTTP status per target; the last 120 samples feed the reach rate and the latency sparkline.
